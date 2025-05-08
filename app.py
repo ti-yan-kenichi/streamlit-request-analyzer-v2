@@ -28,11 +28,9 @@ with st.sidebar:
     )
     xaxis_type = st.radio("結合グラフのX軸", ["📅 時系列", "➡️ 詰めた順序"], horizontal=True)
     if st.button("🧹 入力ファイルをクリア"):
-    st.session_state.uploaded_files = []
-    st.session_state.clear_triggered = True
-    st.experimental_rerun()
         st.session_state.uploaded_files = []
         st.session_state.clear_triggered = True
+        st.experimental_rerun()
 
 uploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True)
 if uploaded and not st.session_state.clear_triggered:
