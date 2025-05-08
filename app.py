@@ -18,7 +18,6 @@ if "clear_triggered" not in st.session_state:
 st.set_page_config(page_title="リクエスト分析", layout="wide")
 st.title("📊 リクエスト分析ダッシュボード")
 
-# サイドバー
 with st.sidebar:
     st.header("⚙️ 分析設定")
     auto_reload = st.checkbox("設定変更で自動更新", value=True)
@@ -34,13 +33,11 @@ with st.sidebar:
         st.session_state.uploaded_files = []
         st.session_state.clear_triggered = True
 
-# ファイルアップロード処理
 uploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True)
 if uploaded and not st.session_state.clear_triggered:
     st.session_state.uploaded_files = uploaded
 uploaded_files = st.session_state.uploaded_files
 
-# X軸ラベル設定
 locator_map = {
     "1ヶ月": mdates.MonthLocator(),
     "7日": mdates.WeekdayLocator(interval=1),
@@ -54,7 +51,6 @@ locator_map = {
     "5分": mdates.MinuteLocator(interval=5),
 }
 
-# グラフ描画関数
 def analyze_and_plot(df, title, x_col, use_locator=True):
     df["1時間前までの件数"] = df["リクエスト日時"].apply(
         lambda t: df[(df["リクエスト日時"] < t) & (df["リクエスト日時"] >= t - pd.Timedelta(hours=1))].shape[0]
@@ -77,7 +73,6 @@ def analyze_and_plot(df, title, x_col, use_locator=True):
     st.pyplot(fig)
     return df
 
-# メイン処理
 if uploaded_files:
     file_data = {}
     for file in uploaded_files:
@@ -87,54 +82,55 @@ if uploaded_files:
             st.error(f"❌ CSV読み込みに失敗しました: {e}")
             continue
 
+
         if "リクエスト日時" not in df.columns:
             st.error(f"❌ ファイル '{file.name}' に 'リクエスト日時' 列が見つかりません。")
             continue
 
         df["リクエスト日時"] = pd.to_datetime(df["リクエスト日時"].astype(str).str.strip("'"), errors="coerce")
+
         df = df.sort_values("リクエスト日時")
         file_data[file.name] = df
 
-    tabs = st.tabs(list(file_data.keys()) + ["🔗 結合分析"])
+    if file_data:
+        tabs = st.tabs(list(file_data.keys()) + ["🔗 結合分析"])
 
-    for i, (fname, df_all) in enumerate(file_data.items()):
-        with tabs[i]:
-            st.subheader(f"📁 {fname}")
-            min_dt, max_dt = df_all["リクエスト日時"].min(), df_all["リクエスト日時"].max()
+        for i, (fname, df_all) in enumerate(file_data.items()):
+            with tabs[i]:
+                st.subheader(f"📁 {fname}")
+                min_dt, max_dt = df_all["リクエスト日時"].min(), df_all["リクエスト日時"].max()
+                col1, col2 = st.columns(2)
+                with col1:
+                    s_date = st.date_input(f"[{fname}] 開始日", min_dt.date(), key=f"sdate_{fname}")
+                    s_time = st.time_input(f"[{fname}] 開始時刻", min_dt.time(), key=f"stime_{fname}")
+                with col2:
+                    e_date = st.date_input(f"[{fname}] 終了日", max_dt.date(), key=f"edate_{fname}")
+                    e_time = st.time_input(f"[{fname}] 終了時刻", max_dt.time(), key=f"etime_{fname}")
+                start_dt = pd.to_datetime(f"{s_date} {s_time}")
+                end_dt = pd.to_datetime(f"{e_date} {e_time}")
+                if start_dt < end_dt:
+                    df_filtered = df_all[(df_all["リクエスト日時"] >= start_dt) & (df_all["リクエスト日時"] <= end_dt)].copy()
+                    if auto_reload or st.button(f"✅ 分析する", key=f"run_{fname}"):
+                        analyze_and_plot(df_filtered, f"{fname} のリクエスト件数", "リクエスト日時")
+
+        with tabs[-1]:
+            st.subheader("🔗 結合分析")
+            combined_df = pd.concat(file_data.values()).sort_values("リクエスト日時").reset_index(drop=True)
+            min_dt = combined_df["リクエスト日時"].min()
+            max_dt = combined_df["リクエスト日時"].max()
             col1, col2 = st.columns(2)
             with col1:
-                s_date = st.date_input(f"[{fname}] 開始日", min_dt.date(), key=f"sdate_{fname}")
-                s_time = st.time_input(f"[{fname}] 開始時刻", min_dt.time(), key=f"stime_{fname}")
+                s_date = st.date_input("開始日（結合）", min_dt.date(), key="sdate_all")
+                s_time = st.time_input("開始時刻（結合）", min_dt.time(), key="stime_all")
             with col2:
-                e_date = st.date_input(f"[{fname}] 終了日", max_dt.date(), key=f"edate_{fname}")
-                e_time = st.time_input(f"[{fname}] 終了時刻", max_dt.time(), key=f"etime_{fname}")
-
+                e_date = st.date_input("終了日（結合）", max_dt.date(), key="edate_all")
+                e_time = st.time_input("終了時刻（結合）", max_dt.time(), key="etime_all")
             start_dt = pd.to_datetime(f"{s_date} {s_time}")
             end_dt = pd.to_datetime(f"{e_date} {e_time}")
             if start_dt < end_dt:
-                df_filtered = df_all[(df_all["リクエスト日時"] >= start_dt) & (df_all["リクエスト日時"] <= end_dt)].copy()
-                if auto_reload or st.button(f"✅ 分析する", key=f"run_{fname}"):
-                    analyze_and_plot(df_filtered, f"{fname} のリクエスト件数", "リクエスト日時")
-
-    # 結合タブ
-    with tabs[-1]:
-        st.subheader("🔗 結合分析")
-        combined_df = pd.concat(file_data.values()).sort_values("リクエスト日時").reset_index(drop=True)
-        min_dt = combined_df["リクエスト日時"].min()
-        max_dt = combined_df["リクエスト日時"].max()
-        col1, col2 = st.columns(2)
-        with col1:
-            s_date = st.date_input("開始日（結合）", min_dt.date(), key="sdate_all")
-            s_time = st.time_input("開始時刻（結合）", min_dt.time(), key="stime_all")
-        with col2:
-            e_date = st.date_input("終了日（結合）", max_dt.date(), key="edate_all")
-            e_time = st.time_input("終了時刻（結合）", max_dt.time(), key="etime_all")
-        start_dt = pd.to_datetime(f"{s_date} {s_time}")
-        end_dt = pd.to_datetime(f"{e_date} {e_time}")
-        if start_dt < end_dt:
-            df = combined_df[(combined_df["リクエスト日時"] >= start_dt) & (combined_df["リクエスト日時"] <= end_dt)].copy()
-            if xaxis_type == "➡️ 詰めた順序":
-                df["index"] = range(len(df))
-                analyze_and_plot(df, "結合リクエスト件数（詰め表示）", "index", use_locator=False)
-            else:
-                analyze_and_plot(df, "結合リクエスト件数（時系列）", "リクエスト日時", use_locator=True)
+                df = combined_df[(combined_df["リクエスト日時"] >= start_dt) & (combined_df["リクエスト日時"] <= end_dt)].copy()
+                if xaxis_type == "➡️ 詰めた順序":
+                    df["index"] = range(len(df))
+                    analyze_and_plot(df, "結合リクエスト件数（詰め表示）", "index", use_locator=False)
+                else:
+                    analyze_and_plot(df, "結合リクエスト件数（時系列）", "リクエスト日時", use_locator=True)
