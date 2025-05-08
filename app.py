@@ -5,11 +5,9 @@ import matplotlib.dates as mdates
 import matplotlib.font_manager as fm
 import os
 
-# フォント設定（macOS）
 font_path = "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc"
 jp_font = fm.FontProperties(fname=font_path) if os.path.exists(font_path) else None
 
-# セッション初期化
 if "uploaded_files" not in st.session_state:
     st.session_state.uploaded_files = []
 if "clear_triggered" not in st.session_state:
@@ -82,13 +80,11 @@ if uploaded_files:
             st.error(f"❌ CSV読み込みに失敗しました: {e}")
             continue
 
-
         if "リクエスト日時" not in df.columns:
             st.error(f"❌ ファイル '{file.name}' に 'リクエスト日時' 列が見つかりません。")
             continue
 
         df["リクエスト日時"] = pd.to_datetime(df["リクエスト日時"].astype(str).str.strip("'"), errors="coerce")
-
         df = df.sort_values("リクエスト日時")
         file_data[file.name] = df
 
@@ -111,7 +107,20 @@ if uploaded_files:
                 if start_dt < end_dt:
                     df_filtered = df_all[(df_all["リクエスト日時"] >= start_dt) & (df_all["リクエスト日時"] <= end_dt)].copy()
                     if auto_reload or st.button(f"✅ 分析する", key=f"run_{fname}"):
-                        analyze_and_plot(df_filtered, f"{fname} のリクエスト件数", "リクエスト日時")
+                        df_result = analyze_and_plot(df_filtered, f"{fname} のリクエスト件数", "リクエスト日時")
+                        df_exceed = df_result[df_result["1時間前までの件数"] > threshold][["リクエスト日時", "1時間前までの件数"]]
+                        if not df_exceed.empty:
+                            st.subheader("⚠️ 制限値を超えた時間帯")
+                            st.dataframe(df_exceed, use_container_width=True)
+                            exceed_csv = df_exceed.to_csv(index=False).encode("utf-8")
+                            st.download_button(
+                                label="📥 超過リストをCSVでダウンロード",
+                                data=exceed_csv,
+                                file_name=f"{fname}_exceed_list.csv",
+                                mime="text/csv"
+                            )
+                        else:
+                            st.info("✅ 制限値を超えたデータはありませんでした。")
 
         with tabs[-1]:
             st.subheader("🔗 結合分析")
