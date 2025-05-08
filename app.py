@@ -81,10 +81,16 @@ def analyze_and_plot(df, title, x_col, use_locator=True):
 if uploaded_files:
     file_data = {}
     for file in uploaded_files:
-        df = pd.read_csv(file, encoding="shift_jis", encoding_errors="replace")
+        try:
+            df = pd.read_csv(file, skiprows=3, encoding="shift_jis", encoding_errors="replace", engine="python")
+        except Exception as e:
+            st.error(f"❌ CSV読み込みに失敗しました: {e}")
+            continue
+
         if "リクエスト日時" not in df.columns:
             st.error(f"❌ ファイル '{file.name}' に 'リクエスト日時' 列が見つかりません。")
             continue
+
         df["リクエスト日時"] = pd.to_datetime(df["リクエスト日時"].astype(str).str.strip("'"), errors="coerce")
         df = df.sort_values("リクエスト日時")
         file_data[file.name] = df
@@ -114,7 +120,7 @@ if uploaded_files:
     with tabs[-1]:
         st.subheader("🔗 結合分析")
         combined_df = pd.concat(file_data.values()).sort_values("リクエスト日時").reset_index(drop=True)
-        min_dt, max_dt = combined_df["リクエスト日時"].min()
+        min_dt = combined_df["リクエスト日時"].min()
         max_dt = combined_df["リクエスト日時"].max()
         col1, col2 = st.columns(2)
         with col1:
