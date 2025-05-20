@@ -6,7 +6,7 @@ import matplotlib.font_manager as fm
 import os
 
 font_path = "fonts/NotoSansJP-Regular.ttf"
-jp_font = fm.FontProperties(fname=font_path) if os.path.exists(font_path) else None
+jp_font = fm.FontProperties(fname=font_path)
 
 if "uploaded_files" not in st.session_state:
     st.session_state.uploaded_files = []
@@ -20,7 +20,7 @@ with st.sidebar:
     st.header("⚙️ 分析設定")
     auto_reload = st.checkbox("設定変更で自動更新", value=True)
     threshold = st.number_input("制限値", min_value=1, step=1, value=360)
-    y_tick_label = st.selectbox("Y軸目盛", [1000, 500, 300, 200, 100, 50], index=3)
+    y_tick_label = st.selectbox("Y軸目盛", [1000, 500, 300, 200, 100, 50, 10, 5], index=5)
     x_tick_label = st.selectbox(
         "X軸目盛",
         ["1ヶ月", "7日", "1日", "12時間", "6時間", "3時間", "1時間", "30分", "15分", "5分"],
@@ -73,14 +73,12 @@ def analyze_and_plot(df, title, x_col, use_locator=True):
     st.pyplot(fig)
     return df
 
-# 分析部分はファイル単位に繰り返す
 def summarize_peak(df_result):
     max_val = df_result["1時間前までの件数"].max()
     peak_time = df_result.loc[df_result["1時間前までの件数"].idxmax(), "リクエスト日時"]
     st.markdown(f"📈 **ピーク件数：{max_val} 件**")
     st.markdown(f"🕒 **ピーク時刻：{peak_time}**")
 
-# 分析対象がある場合のみ処理
 if uploaded_files:
     file_data = {}
     for file in uploaded_files:
