@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.font_manager as fm
 import os
+import plotly.graph_objects as go
 
 font_path = "fonts/NotoSansJP-Regular.ttf"
 jp_font = fm.FontProperties(fname=font_path)
@@ -106,7 +107,6 @@ if uploaded_files:
                                 mime="text/csv"
                             )
                         else:
-                            st.info("✅ 制限値を超えたデータはありませんでした。")import plotly.graph_objects as go
 
 def analyze_and_plot(df, title, x_col, use_locator=True):
     df["1時間前までの件数"] = df["リクエスト日時"].apply(
