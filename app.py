@@ -33,7 +33,43 @@ with st.sidebar:
         st.session_state.clear_triggered = True
         st.rerun()
 
-uploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True)
+def analyze_and_plot(df, title, x_col, use_locator=True):
+    df["1時間前までの件数"] = df["リクエスト日時"].apply(
+        lambda t: df[(df["リクエスト日時"] < t) & (df["リクエスト日時"] >= t - pd.Timedelta(hours=1))].shape[0]
+    )
+    below = df[df["1時間前までの件数"] <= threshold]
+    above = df[df["1時間前までの件数"] > threshold]
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=below[x_col],
+        y=below["1時間前までの件数"],
+        mode='lines+markers',
+        name="正常",
+        marker=dict(color='blue', size=5),
+        hovertemplate="日時: %{x}<br>件数: %{y}"
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=above[x_col],
+        y=above["1時間前までの件数"],
+        mode='markers',
+        name="超過",
+        marker=dict(color='red', size=7),
+        hovertemplate="日時: %{x}<br>件数: %{y}"
+    ))
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="時刻" if x_col == "リクエスト日時" else "順序",
+        yaxis_title="件数",
+        height=500,
+        xaxis=dict(rangeslider=dict(visible=True), type='date' if x_col == "リクエスト日時" else 'linear'),
+        yaxis=dict(dtick=y_tick_label)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+    return dfuploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True)
 if uploaded and not st.session_state.clear_triggered:
     st.session_state.uploaded_files = uploaded
 uploaded_files = st.session_state.uploaded_files
@@ -109,40 +145,3 @@ if uploaded_files:
     pass
     pass
 
-def analyze_and_plot(df, title, x_col, use_locator=True):
-    df["1時間前までの件数"] = df["リクエスト日時"].apply(
-        lambda t: df[(df["リクエスト日時"] < t) & (df["リクエスト日時"] >= t - pd.Timedelta(hours=1))].shape[0]
-    )
-    below = df[df["1時間前までの件数"] <= threshold]
-    above = df[df["1時間前までの件数"] > threshold]
-    fig = go.Figure()
-
-    fig.add_trace(go.Scatter(
-        x=below[x_col],
-        y=below["1時間前までの件数"],
-        mode='lines+markers',
-        name="正常",
-        marker=dict(color='blue', size=5),
-        hovertemplate="日時: %{x}<br>件数: %{y}"
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=above[x_col],
-        y=above["1時間前までの件数"],
-        mode='markers',
-        name="超過",
-        marker=dict(color='red', size=7),
-        hovertemplate="日時: %{x}<br>件数: %{y}"
-    ))
-
-    fig.update_layout(
-        title=title,
-        xaxis_title="時刻" if x_col == "リクエスト日時" else "順序",
-        yaxis_title="件数",
-        height=500,
-        xaxis=dict(rangeslider=dict(visible=True), type='date' if x_col == "リクエスト日時" else 'linear'),
-        yaxis=dict(dtick=y_tick_label)
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-    return df
