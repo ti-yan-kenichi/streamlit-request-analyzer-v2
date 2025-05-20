@@ -50,32 +50,9 @@ locator_map = {
     "5分": mdates.MinuteLocator(interval=5),
 }
 
-def analyze_and_plot(df, title, x_col, use_locator=True):
-    df["1時間前までの件数"] = df["リクエスト日時"].apply(
-        lambda t: df[(df["リクエスト日時"] < t) & (df["リクエスト日時"] >= t - pd.Timedelta(hours=1))].shape[0]
-    )
-    fig, ax = plt.subplots(figsize=(min(24, max(10, len(df) / 100)), 6), dpi=120)
-    below = df[df["1時間前までの件数"] <= threshold]
-    above = df[df["1時間前までの件数"] > threshold]
-    ax.plot(below[x_col], below["1時間前までの件数"], 'o-', label="正常", markersize=3)
-    ax.plot(above[x_col], above["1時間前までの件数"], 'o', color='red', label="超過", markersize=5)
-    ax.set_title(title, fontproperties=jp_font)
-    ax.set_ylabel("件数", fontproperties=jp_font)
-    ax.set_xlabel("順序" if x_col == "index" else "時刻", fontproperties=jp_font)
-    ax.grid(True, linestyle='--', alpha=0.5)
-    ax.set_yticks(range(0, int(df["1時間前までの件数"].max()) + y_tick_label, y_tick_label))
-    plt.yticks(fontproperties=jp_font)
-    if use_locator and x_col == "リクエスト日時":
-        ax.xaxis.set_major_locator(locator_map[x_tick_label])
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
-        plt.xticks(rotation=45, fontproperties=jp_font)
-    ax.legend(prop=jp_font)
-    st.pyplot(fig)
-    return df
-
 def summarize_peak(df_result):
     max_val = df_result["1時間前までの件数"].max()
-    peak_time = df_result.loc[df_result["1時間前までの件数"].idxmax(), "リクエスト日時"]
+    peak_time = df_result.loc[df_result["1時間前までの件数"].idxmax(), "リクエスト日時"].strftime('%Y-%m-%d %H:%M:%S')
     st.markdown(f"📈 **ピーク件数：{max_val} 件**")
     st.markdown(f"🕒 **ピーク時刻：{peak_time}**")
 
@@ -129,4 +106,42 @@ if uploaded_files:
                                 mime="text/csv"
                             )
                         else:
-                            st.info("✅ 制限値を超えたデータはありませんでした。")
+                            st.info("✅ 制限値を超えたデータはありませんでした。")import plotly.graph_objects as go
+
+def analyze_and_plot(df, title, x_col, use_locator=True):
+    df["1時間前までの件数"] = df["リクエスト日時"].apply(
+        lambda t: df[(df["リクエスト日時"] < t) & (df["リクエスト日時"] >= t - pd.Timedelta(hours=1))].shape[0]
+    )
+    below = df[df["1時間前までの件数"] <= threshold]
+    above = df[df["1時間前までの件数"] > threshold]
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=below[x_col],
+        y=below["1時間前までの件数"],
+        mode='lines+markers',
+        name="正常",
+        marker=dict(color='blue', size=5),
+        hovertemplate="日時: %{x}<br>件数: %{y}"
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=above[x_col],
+        y=above["1時間前までの件数"],
+        mode='markers',
+        name="超過",
+        marker=dict(color='red', size=7),
+        hovertemplate="日時: %{x}<br>件数: %{y}"
+    ))
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="時刻" if x_col == "リクエスト日時" else "順序",
+        yaxis_title="件数",
+        height=500,
+        xaxis=dict(rangeslider=dict(visible=True), type='date' if x_col == "リクエスト日時" else 'linear'),
+        yaxis=dict(dtick=y_tick_label)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+    return df
