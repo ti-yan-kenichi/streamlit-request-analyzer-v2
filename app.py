@@ -107,6 +107,7 @@ if uploaded_files:
                                 mime="text/csv"
                             )
                         else:
+    pass
 
 def analyze_and_plot(df, title, x_col, use_locator=True):
     df["1時間前までの件数"] = df["リクエスト日時"].apply(
