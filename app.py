@@ -69,7 +69,8 @@ def analyze_and_plot(df, title, x_col, use_locator=True):
     )
 
     st.plotly_chart(fig, use_container_width=True)
-    return dfuploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True)
+    return df
+uploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True)
 if uploaded and not st.session_state.clear_triggered:
     st.session_state.uploaded_files = uploaded
 uploaded_files = st.session_state.uploaded_files
