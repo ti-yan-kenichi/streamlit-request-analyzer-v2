@@ -106,7 +106,7 @@ if uploaded_files:
                                 file_name=f"{fname}_exceed_list.csv",
                                 mime="text/csv"
                             )
-                        else:
+    pass
     pass
 
 def analyze_and_plot(df, title, x_col, use_locator=True):
