@@ -73,6 +73,14 @@ def analyze_and_plot(df, title, x_col, use_locator=True):
     st.pyplot(fig)
     return df
 
+# 分析部分はファイル単位に繰り返す
+def summarize_peak(df_result):
+    max_val = df_result["1時間前までの件数"].max()
+    peak_time = df_result.loc[df_result["1時間前までの件数"].idxmax(), "リクエスト日時"]
+    st.markdown(f"📈 **ピーク件数：{max_val} 件**")
+    st.markdown(f"🕒 **ピーク時刻：{peak_time}**")
+
+# 分析対象がある場合のみ処理
 if uploaded_files:
     file_data = {}
     for file in uploaded_files:
@@ -110,6 +118,7 @@ if uploaded_files:
                     df_filtered = df_all[(df_all["リクエスト日時"] >= start_dt) & (df_all["リクエスト日時"] <= end_dt)].copy()
                     if auto_reload or st.button(f"✅ 分析する", key=f"run_{fname}"):
                         df_result = analyze_and_plot(df_filtered, f"{fname} のリクエスト件数", "リクエスト日時")
+                        summarize_peak(df_result)
                         df_exceed = df_result[df_result["1時間前までの件数"] > threshold][["リクエスト日時", "1時間前までの件数"]]
                         if not df_exceed.empty:
                             st.subheader("⚠️ 制限値を超えた時間帯")
@@ -123,25 +132,3 @@ if uploaded_files:
                             )
                         else:
                             st.info("✅ 制限値を超えたデータはありませんでした。")
-
-        with tabs[-1]:
-            st.subheader("🔗 結合分析")
-            combined_df = pd.concat(file_data.values()).sort_values("リクエスト日時").reset_index(drop=True)
-            min_dt = combined_df["リクエスト日時"].min()
-            max_dt = combined_df["リクエスト日時"].max()
-            col1, col2 = st.columns(2)
-            with col1:
-                s_date = st.date_input("開始日（結合）", min_dt.date(), key="sdate_all")
-                s_time = st.time_input("開始時刻（結合）", min_dt.time(), key="stime_all")
-            with col2:
-                e_date = st.date_input("終了日（結合）", max_dt.date(), key="edate_all")
-                e_time = st.time_input("終了時刻（結合）", max_dt.time(), key="etime_all")
-            start_dt = pd.to_datetime(f"{s_date} {s_time}")
-            end_dt = pd.to_datetime(f"{e_date} {e_time}")
-            if start_dt < end_dt:
-                df = combined_df[(combined_df["リクエスト日時"] >= start_dt) & (combined_df["リクエスト日時"] <= end_dt)].copy()
-                if xaxis_type == "➡️ 詰めた順序":
-                    df["index"] = range(len(df))
-                    analyze_and_plot(df, "結合リクエスト件数（詰め表示）", "index", use_locator=False)
-                else:
-                    analyze_and_plot(df, "結合リクエスト件数（時系列）", "リクエスト日時", use_locator=True)
