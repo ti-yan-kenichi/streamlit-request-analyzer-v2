@@ -5,7 +5,7 @@ import matplotlib.dates as mdates
 import matplotlib.font_manager as fm
 import os
 
-font_path = "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc"
+font_path = "fonts/NotoSansJP-Regular.ttf"
 jp_font = fm.FontProperties(fname=font_path) if os.path.exists(font_path) else None
 
 if "uploaded_files" not in st.session_state:
