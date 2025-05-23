@@ -33,7 +33,7 @@ with st.sidebar:
         st.session_state.clear_triggered = True
         st.rerun()
 
-def analyze_and_plot(df, title, x_col, use_locator=True):
+def analyze_and_plot(df, title, x_col):
     timestamps = df["リクエスト日時"]
     counts = []
     for i in range(len(timestamps)):
@@ -79,19 +79,6 @@ def analyze_and_plot(df, title, x_col, use_locator=True):
     )
     st.plotly_chart(fig, use_container_width=True)
     return df
-
-locator_map = {
-    "1ヶ月": mdates.MonthLocator(),
-    "7日": mdates.WeekdayLocator(interval=1),
-    "1日": mdates.DayLocator(interval=1),
-    "12時間": mdates.HourLocator(interval=12),
-    "6時間": mdates.HourLocator(interval=6),
-    "3時間": mdates.HourLocator(interval=3),
-    "1時間": mdates.HourLocator(interval=1),
-    "30分": mdates.MinuteLocator(interval=30),
-    "15分": mdates.MinuteLocator(interval=15),
-    "5分": mdates.MinuteLocator(interval=5),
-}
 
 def summarize_peak(df_result):
     max_val = df_result["1時間前までの件数"].max()
