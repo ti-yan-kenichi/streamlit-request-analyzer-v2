@@ -18,8 +18,8 @@ st.set_page_config(page_title="リクエスト分析", layout="wide")
 st.title("📊 リクエスト分析ダッシュボード")
 
 with st.sidebar:
-    st.header("⚙️ 分析設定")
-    auto_reload = st.checkbox("設定変更で自動更新", value=True)
+    st.header("⚙️ 分析設定（実行ボタンを押してください）")
+    # auto_reload removed
     threshold = st.number_input("制限値", min_value=1, step=1, value=360)
     y_tick_label = st.selectbox("Y軸目盛", [1000, 500, 300, 200, 100, 50, 10, 5], index=5)
     x_tick_label = st.selectbox(
@@ -34,12 +34,16 @@ with st.sidebar:
         st.rerun()
 
 def analyze_and_plot(df, title, x_col, use_locator=True):
-    df["1時間前までの件数"] = df["リクエスト日時"].apply(
-        lambda t: df[(df["リクエスト日時"] < t) & (df["リクエスト日時"] >= t - pd.Timedelta(hours=1))].shape[0]
-    )
+    timestamps = df["リクエスト日時"]
+    counts = []
+    for i in range(len(timestamps)):
+        start_time = timestamps.iloc[i] - pd.Timedelta(hours=1)
+        count = timestamps[(timestamps >= start_time) & (timestamps < timestamps.iloc[i])].count()
+        counts.append(count)
+    df["1時間前までの件数"] = counts
+
     y_vals = df["1時間前までの件数"].tolist()
     x_vals = df[x_col].tolist()
-
     below_x, below_y, above_x, above_y = [], [], [], []
     for x, y in zip(x_vals, y_vals):
         if y > threshold:
@@ -135,7 +139,7 @@ if uploaded_files:
                 end_dt = pd.to_datetime(f"{e_date} {e_time}")
                 if start_dt < end_dt:
                     df_filtered = df_all[(df_all["リクエスト日時"] >= start_dt) & (df_all["リクエスト日時"] <= end_dt)].copy()
-                    if auto_reload or st.button(f"✅ 分析する", key=f"run_{fname}"):
+                    if st.button(f"✅ 分析する", key=f"run_{fname}"):
                         df_result = analyze_and_plot(df_filtered, f"{fname} のリクエスト件数", "リクエスト日時")
                         summarize_peak(df_result)
                         df_exceed = df_result[df_result["1時間前までの件数"] > threshold][["リクエスト日時", "1時間前までの件数"]]
