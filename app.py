@@ -37,28 +37,34 @@ def analyze_and_plot(df, title, x_col, use_locator=True):
     df["1時間前までの件数"] = df["リクエスト日時"].apply(
         lambda t: df[(df["リクエスト日時"] < t) & (df["リクエスト日時"] >= t - pd.Timedelta(hours=1))].shape[0]
     )
-    below = df[df["1時間前までの件数"] <= threshold]
-    above = df[df["1時間前までの件数"] > threshold]
+    y_vals = df["1時間前までの件数"].tolist()
+    x_vals = df[x_col].tolist()
+
+    below_x, below_y, above_x, above_y = [], [], [], []
+    for x, y in zip(x_vals, y_vals):
+        if y > threshold:
+            above_x.append(x)
+            above_y.append(y)
+            below_x.append(None)
+            below_y.append(None)
+        elif y > 0:
+            below_x.append(x)
+            below_y.append(y)
+            above_x.append(None)
+            above_y.append(None)
+        else:
+            above_x.append(None)
+            above_y.append(None)
+            below_x.append(None)
+            below_y.append(None)
+
     fig = go.Figure()
-
-    fig.add_trace(go.Scatter(
-        x=below[x_col],
-        y=below["1時間前までの件数"],
-        mode='lines+markers',
-        name="正常",
-        marker=dict(color='blue', size=5),
-        hovertemplate="日時: %{x}<br>件数: %{y}"
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=above[x_col],
-        y=above["1時間前までの件数"],
-        mode='markers',
-        name="超過",
-        marker=dict(color='red', size=7),
-        hovertemplate="日時: %{x}<br>件数: %{y}"
-    ))
-
+    fig.add_trace(go.Scatter(x=below_x, y=below_y, mode='lines+markers', name="正常",
+                             marker=dict(color='blue', size=5),
+                             hovertemplate="日時: %{x}<br>件数: %{y}"))
+    fig.add_trace(go.Scatter(x=above_x, y=above_y, mode='markers', name="超過",
+                             marker=dict(color='red', size=7),
+                             hovertemplate="日時: %{x}<br>件数: %{y}"))
     fig.update_layout(
         title=title,
         xaxis_title="時刻" if x_col == "リクエスト日時" else "順序",
@@ -67,13 +73,8 @@ def analyze_and_plot(df, title, x_col, use_locator=True):
         xaxis=dict(rangeslider=dict(visible=True), type='date' if x_col == "リクエスト日時" else 'linear'),
         yaxis=dict(dtick=y_tick_label)
     )
-
     st.plotly_chart(fig, use_container_width=True)
     return df
-uploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True)
-if uploaded and not st.session_state.clear_triggered:
-    st.session_state.uploaded_files = uploaded
-uploaded_files = st.session_state.uploaded_files
 
 locator_map = {
     "1ヶ月": mdates.MonthLocator(),
@@ -93,6 +94,11 @@ def summarize_peak(df_result):
     peak_time = df_result.loc[df_result["1時間前までの件数"].idxmax(), "リクエスト日時"].strftime('%Y-%m-%d %H:%M:%S')
     st.markdown(f"📈 **ピーク件数：{max_val} 件**")
     st.markdown(f"🕒 **ピーク時刻：{peak_time}**")
+
+uploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True)
+if uploaded and not st.session_state.clear_triggered:
+    st.session_state.uploaded_files = uploaded
+uploaded_files = st.session_state.uploaded_files
 
 if uploaded_files:
     file_data = {}
@@ -143,6 +149,5 @@ if uploaded_files:
                                 file_name=f"{fname}_exceed_list.csv",
                                 mime="text/csv"
                             )
-    pass
-    pass
-
+                        else:
+                            st.info("✅ 制限値を超えたデータはありませんでした。")
