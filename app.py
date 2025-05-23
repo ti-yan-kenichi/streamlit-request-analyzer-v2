@@ -20,10 +20,7 @@ st.title("📊 リクエスト分析ダッシュボード")
 with st.sidebar:
     st.header("⚙️ 分析設定（実行ボタンを押してください）")
     # auto_reload removed
-    threshold = st.number_input("制限値", min_value=1, step=1, value=360)
-    y_tick_label = st.selectbox("Y軸目盛", [1000, 500, 300, 200, 100, 50, 10, 5], index=5)
-    x_tick_label = st.selectbox(
-        "X軸目盛",
+    threshold = st.number_input("制限値", min_value=1, step=1, value=360) = st.selectbox("Y軸目盛", [1000, 500, 300, 200, 100, 50, 10, 5], index=5)        "",
         ["1ヶ月", "7日", "1日", "12時間", "6時間", "3時間", "1時間", "30分", "15分", "5分"],
         index=6,
     )
@@ -75,7 +72,6 @@ def analyze_and_plot(df, title, x_col):
         yaxis_title="件数",
         height=500,
         xaxis=dict(rangeslider=dict(visible=True), type='date' if x_col == "リクエスト日時" else 'linear'),
-        yaxis=dict(dtick=y_tick_label)
     )
     st.plotly_chart(fig, use_container_width=True)
     return df
