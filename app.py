@@ -23,7 +23,6 @@ with st.sidebar:
     threshold = st.number_input("制限値", min_value=1, step=1, value=360) = st.selectbox("Y軸目盛", [1000, 500, 300, 200, 100, 50, 10, 5], index=5)        "",
         ["1ヶ月", "7日", "1日", "12時間", "6時間", "3時間", "1時間", "30分", "15分", "5分"],
         index=6,
-    )
     xaxis_type = st.radio("結合グラフのX軸", ["📅 時系列", "➡️ 詰めた順序"], horizontal=True)
     if st.button("🧹 入力ファイルをクリア"):
         st.session_state.uploaded_files = []
@@ -72,7 +71,6 @@ def analyze_and_plot(df, title, x_col):
         yaxis_title="件数",
         height=500,
         xaxis=dict(rangeslider=dict(visible=True), type='date' if x_col == "リクエスト日時" else 'linear'),
-    )
     st.plotly_chart(fig, use_container_width=True)
     return df
 
@@ -135,6 +133,5 @@ if uploaded_files:
                                 data=exceed_csv,
                                 file_name=f"{fname}_exceed_list.csv",
                                 mime="text/csv"
-                            )
                         else:
                             st.info("✅ 制限値を超えたデータはありませんでした。")
