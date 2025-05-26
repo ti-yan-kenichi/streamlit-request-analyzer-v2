@@ -142,3 +142,8 @@ if uploaded_files:
                                            file_name="combined_exceed.csv", mime="text/csv")
                     else:
                         st.info("✅ 制限値を超えたデータはありませんでした。")
+
+
+if st.session_state.get("force_rerun", False):
+    st.session_state["force_rerun"] = False
+    st.experimental_rerun()
