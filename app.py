@@ -41,12 +41,12 @@ def analyze_and_plot(df, title, x_col):
     df["1時間前までの件数"] = df["リクエスト日時"].apply(
         lambda t: df[(df["リクエスト日時"] < t) & (df["リクエスト日時"] >= t - pd.Timedelta(hours=1))].shape[0]
     )
-    df = df[df["1時間前までの件数"] > 0]  # リクエストが0の行を除外
+    df["1時間前までの件数"] = df["1時間前までの件数"].apply(lambda x: x if x > 0 else None)  # リクエストが0の行を除外
     below = df[df["1時間前までの件数"] <= threshold]
     above = df[df["1時間前までの件数"] > threshold]
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=below[x_col], y=below["1時間前までの件数"], mode='lines+markers',
-                             name="正常", marker=dict(color='blue', size=5),
+                             connectgaps=False, name="正常", marker=dict(color='blue', size=5),
                              hovertemplate="日時: %{x}<br>件数: %{y}"))
     fig.add_trace(go.Scatter(x=above[x_col], y=above["1時間前までの件数"], mode='markers',
                              name="超過", marker=dict(color='red', size=7),
