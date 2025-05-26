@@ -24,9 +24,7 @@ with st.sidebar:
     threshold = st.number_input("制限値", min_value=1, step=1, value=360)
     y_tick_label = st.selectbox("Y軸目盛", [1000, 500, 300, 200, 100, 50, 10, 5], index=5)
     if st.button("🧹 入力ファイルをクリア"):
-        st.session_state.uploaded_files = []
-        st.session_state.clear_triggered = False
-        st.session_state["file_uploader"] = None
+        st.session_state.clear()
         st.experimental_rerun()
 
 # ファイルアップロード欄（常時表示）
@@ -87,7 +85,8 @@ if uploaded_files:
         file_data[file.name] = df
 
     if file_data:
-        tabs = st.tabs(list(file_data.keys()) + (["🔗 結合分析"] if len(file_data) > 1 else []))
+        file_names = list(file_data.keys())
+        tabs = st.tabs(file_names + (["🔗 結合分析"] if len(file_names) > 1 else []))
 
         for i, (fname, df_all) in enumerate(file_data.items()):
             with tabs[i]:
