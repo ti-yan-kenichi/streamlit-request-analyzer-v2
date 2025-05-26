@@ -27,7 +27,7 @@ with st.sidebar:
         st.session_state.uploaded_files = []
         st.session_state.clear_triggered = True
         st.session_state["file_uploader"] = None
-        st.experimental_rerun()
+        st.stop()
 
 def analyze_and_plot(df, title, x_col):
     timestamps = df["リクエスト日時"]
@@ -96,9 +96,13 @@ if uploaded_files:
         if file.getbuffer().nbytes == 0:
             continue
         try:
+            if file.getbuffer().nbytes == 0:
+                raise ValueError("空のファイルです")
             df = pd.read_csv(file, skiprows=3, encoding="shift_jis", encoding_errors="replace", engine="python")
+            if df.empty:
+                raise ValueError("データが空のためスキップされました")
         except Exception as e:
-            st.error(f"❌ CSV読み込みに失敗しました: {e}")
+            st.warning(f"⚠️ ファイル '{file.name}' はスキップされました（{e}）")
             continue
 
         if "リクエスト日時" not in df.columns:
