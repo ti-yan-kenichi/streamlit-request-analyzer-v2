@@ -83,12 +83,14 @@ def summarize_peak(df_result):
     st.markdown(f"🕒 **ピーク時刻：{peak_time}**")
 
 uploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True, key="file_uploader")
+if uploaded:
+    st.session_state.clear_triggered = False
 if uploaded and not st.session_state.clear_triggered:
     st.session_state.uploaded_files = uploaded
 uploaded_files = st.session_state.uploaded_files
 
 if not uploaded_files:
-    st.info("左のサイドバーからCSVファイルをアップロードしてください。")
+    st.info("📂 『Browse files』ボタンからCSVファイルをアップロードしてください。")
 
 if uploaded_files:
     file_data = {}
