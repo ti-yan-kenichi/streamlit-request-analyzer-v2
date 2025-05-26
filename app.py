@@ -25,7 +25,7 @@ with st.sidebar:
     y_tick_label = st.selectbox("Y軸目盛", [1000, 500, 300, 200, 100, 50, 10, 5], index=5)
     if st.button("🧹 入力ファイルをクリア"):
         st.session_state.uploaded_files = []
-        st.session_state.clear_triggered = True
+        st.session_state.clear_triggered = False
         st.session_state["file_uploader"] = None
         st.stop()
 
