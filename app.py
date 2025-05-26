@@ -29,9 +29,6 @@ with st.sidebar:
 
 
 # ファイルアップロード欄
-if "upload_key" not in st.session_state:
-    st.session_state.upload_key = "file_uploader_1"
-
 uploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True, key=st.session_state.upload_key)
 if uploaded and not st.session_state.clear_triggered:
     st.session_state.uploaded_files = uploaded
