@@ -41,6 +41,7 @@ def analyze_and_plot(df, title, x_col):
     df["1時間前までの件数"] = df["リクエスト日時"].apply(
         lambda t: df[(df["リクエスト日時"] < t) & (df["リクエスト日時"] >= t - pd.Timedelta(hours=1))].shape[0]
     )
+    df = df[df["1時間前までの件数"] > 0]  # リクエストが0の行を除外
     below = df[df["1時間前までの件数"] <= threshold]
     above = df[df["1時間前までの件数"] > threshold]
     fig = go.Figure()
