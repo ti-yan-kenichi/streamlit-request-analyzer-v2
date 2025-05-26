@@ -24,7 +24,8 @@ with st.sidebar:
     threshold = st.number_input("制限値", min_value=1, step=1, value=360)
     y_tick_label = st.selectbox("Y軸目盛", [1000, 500, 300, 200, 100, 50, 10, 5], index=5)
     if st.button("🧹 入力ファイルをクリア"):
-        st.session_state.clear()
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
         st.experimental_rerun()
 
 # ファイルアップロード欄（常時表示）
@@ -57,6 +58,9 @@ def analyze_and_plot(df, title, x_col):
     return df
 
 def summarize_peak(df_result):
+    if "1時間前までの件数" not in df_result.columns or df_result["1時間前までの件数"].dropna().empty:
+        st.info("📉 ピーク情報は存在しません。")
+        return
     max_val = df_result["1時間前までの件数"].max()
     peak_time = df_result.loc[df_result["1時間前までの件数"].idxmax(), "リクエスト日時"].strftime('%Y-%m-%d %H:%M:%S')
     st.markdown(f"📈 **ピーク件数：{max_val} 件**")
