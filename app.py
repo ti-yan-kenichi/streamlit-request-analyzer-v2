@@ -89,7 +89,7 @@ if uploaded and not st.session_state.clear_triggered:
     st.session_state.uploaded_files = uploaded
 uploaded_files = st.session_state.uploaded_files
 
-if not uploaded_files:
+if not uploaded and not st.session_state.uploaded_files:
     st.info("📂 『Browse files』ボタンからCSVファイルをアップロードしてください。")
 
 if uploaded_files:
