@@ -58,8 +58,8 @@ def analyze_and_plot(df, title, x_col):
     return df
 
 def summarize_peak(df_result):
-    if "1時間前までの件数" not in df_result.columns or df_result["1時間前までの件数"].dropna().empty:
-        st.info("📉 ピーク情報は存在しません。")
+    if df_result.empty or "1時間前までの件数" not in df_result.columns:
+        st.info("📉 ピーク情報はありません（データが空またはすべて0件です）。")
         return
     max_val = df_result["1時間前までの件数"].max()
     peak_time = df_result.loc[df_result["1時間前までの件数"].idxmax(), "リクエスト日時"].strftime('%Y-%m-%d %H:%M:%S')
