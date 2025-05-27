@@ -146,3 +146,29 @@ if uploaded_files:
                                            file_name=f"{fname}_exceed.csv", mime="text/csv")
                     else:
                         st.info("✅ 制限値を超えたデータはありませんでした。")
+        if len(file_data) > 1:
+            with st.tabs(["🔗 結合分析"])[0]:
+                st.subheader("📊 結合グラフ")
+                df_combined = pd.concat(file_data.values()).sort_values("リクエスト日時")
+                min_dt, max_dt = df_combined["リクエスト日時"].min(), df_combined["リクエスト日時"].max()
+                col1, col2 = st.columns(2)
+                with col1:
+                    s_date = st.date_input("🔗 開始日", min_dt.date(), key="sdate_combined")
+                    s_time = st.time_input("🔗 開始時刻", min_dt.time(), key="stime_combined")
+                with col2:
+                    e_date = st.date_input("🔗 終了日", max_dt.date(), key="edate_combined")
+                    e_time = st.time_input("🔗 終了時刻", max_dt.time(), key="etime_combined")
+                start_dt = pd.to_datetime(f"{s_date} {s_time}")
+                end_dt = pd.to_datetime(f"{e_date} {e_time}")
+                if start_dt < end_dt and st.button("✅ 結合分析する", key="run_combined"):
+                    df_filtered = df_combined[(df_combined["リクエスト日時"] >= start_dt) & (df_combined["リクエスト日時"] <= end_dt)].copy()
+                    df_result = analyze_and_plot(df_filtered, "結合グラフ", "リクエスト日時")
+                    summarize_peak(df_result)
+                    df_exceed = df_result[df_result["1時間前までの件数"] > threshold][["リクエスト日時", "1時間前までの件数"]]
+                    if not df_exceed.empty:
+                        st.subheader("⚠️ 制限値を超えた時間帯")
+                        st.dataframe(df_exceed, use_container_width=True)
+                        st.download_button("📥 超過リストCSV", df_exceed.to_csv(index=False).encode("utf-8"),
+                                           file_name="combined_exceed.csv", mime="text/csv")
+                    else:
+                        st.info("✅ 制限値を超えたデータはありませんでした。")
