@@ -49,6 +49,12 @@ def analyze_and_plot(df, title, x_col):
         next_idx = below.index[below.index.get_loc(i) + 1]
         if next_idx in above_index_set:
             below.loc[next_idx, "1時間前までの件数"] = None
+    below["1時間前までの件数"] = below["1時間前までの件数"].astype("float")
+    above_index_set = set(df[df["1時間前までの件数"] > threshold].index)
+    for i in below.index[:-1]:
+        next_idx = below.index[below.index.get_loc(i) + 1]
+        if next_idx in above_index_set:
+            below.loc[next_idx, "1時間前までの件数"] = None
 
     above = df[df["1時間前までの件数"] > threshold]
 
