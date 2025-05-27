@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import plotly.graph_objects as go
 import os
@@ -25,7 +24,7 @@ with st.sidebar:
         st.session_state.clear_triggered = False
         if "file_uploader" in st.session_state:
             del st.session_state["file_uploader"]
-        st.success("✅ 入力内容を初期化しました。")
+        st.experimental_rerun()
 
 uploaded = st.file_uploader("📁 CSVファイルをアップロード（複数可）", type="csv", accept_multiple_files=True, key="file_uploader")
 if uploaded and not st.session_state.clear_triggered:
@@ -85,3 +84,64 @@ def analyze_and_plot(df, title, x_col):
     )
     st.plotly_chart(fig, use_container_width=True)
     return df
+
+def summarize_peak(df_result):
+    if df_result.empty or "1時間前までの件数" not in df_result.columns or df_result["1時間前までの件数"].isnull().all():
+        st.info("📉 ピーク情報はありません（データが空またはすべて0件です）。")
+        return
+    max_val = df_result["1時間前までの件数"].max()
+    peak_time = df_result.loc[df_result["1時間前までの件数"].idxmax(), "リクエスト日時"]
+    peak_time_str = pd.to_datetime(peak_time).strftime('%Y-%m-%d %H:%M:%S')
+    st.markdown(f"📈 **ピーク件数：{max_val} 件**")
+    st.markdown(f"🕒 **ピーク時刻：{peak_time_str}**")
+
+if uploaded_files:
+    file_data = {}
+    for file in uploaded_files:
+        try:
+            if file.getbuffer().nbytes == 0:
+                raise ValueError("空のファイルです")
+            df = pd.read_csv(file, skiprows=3, encoding="shift_jis", encoding_errors="replace", engine="python")
+            if df.empty:
+                raise ValueError("データが空のためスキップ")
+        except Exception as e:
+            st.warning(f"⚠️ ファイル '{file.name}' はスキップされました（{e}）")
+            continue
+
+        if "リクエスト日時" not in df.columns:
+            st.warning(f"⚠️ ファイル '{file.name}' に 'リクエスト日時' 列が見つかりません。")
+            continue
+
+        df["リクエスト日時"] = pd.to_datetime(df["リクエスト日時"].astype(str).str.strip("'"), errors="coerce")
+        df = df.sort_values("リクエスト日時")
+        file_data[file.name] = df
+
+    if file_data:
+        file_names = list(file_data.keys())
+        tabs = st.tabs(file_names)
+
+        for i, (fname, df_all) in enumerate(file_data.items()):
+            with tabs[i]:
+                st.subheader(f"📁 {fname}")
+                min_dt, max_dt = df_all["リクエスト日時"].min(), df_all["リクエスト日時"].max()
+                col1, col2 = st.columns(2)
+                with col1:
+                    s_date = st.date_input(f"[{fname}] 開始日", min_dt.date(), key=f"sdate_{fname}")
+                    s_time = st.time_input(f"[{fname}] 開始時刻", min_dt.time(), key=f"stime_{fname}")
+                with col2:
+                    e_date = st.date_input(f"[{fname}] 終了日", max_dt.date(), key=f"edate_{fname}")
+                    e_time = st.time_input(f"[{fname}] 終了時刻", max_dt.time(), key=f"etime_{fname}")
+                start_dt = pd.to_datetime(f"{s_date} {s_time}")
+                end_dt = pd.to_datetime(f"{e_date} {e_time}")
+                if start_dt < end_dt and st.button(f"✅ 分析する", key=f"run_{fname}"):
+                    df_filtered = df_all[(df_all["リクエスト日時"] >= start_dt) & (df_all["リクエスト日時"] <= end_dt)].copy()
+                    df_result = analyze_and_plot(df_filtered, f"{fname} のリクエスト件数", "リクエスト日時")
+                    summarize_peak(df_result)
+                    df_exceed = df_result[df_result["1時間前までの件数"] > threshold][["リクエスト日時", "1時間前までの件数"]]
+                    if not df_exceed.empty:
+                        st.subheader("⚠️ 制限値を超えた時間帯")
+                        st.dataframe(df_exceed, use_container_width=True)
+                        st.download_button("📥 超過リストCSV", df_exceed.to_csv(index=False).encode("utf-8"),
+                                           file_name=f"{fname}_exceed.csv", mime="text/csv")
+                    else:
+                        st.info("✅ 制限値を超えたデータはありませんでした。")
