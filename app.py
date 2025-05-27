@@ -51,7 +51,8 @@ def analyze_and_plot(df, title, x_col):
             cut_indexes.append(next_idx)
 
     df_normal = df[~df["超過フラグ"]].copy()
-    df_normal.loc[cut_indexes, "1時間前までの件数"] = None
+    safe_cut = df_normal.index.intersection(cut_indexes)
+    df_normal.loc[safe_cut, "1時間前までの件数"] = None
     df_normal["1時間前までの件数"] = df_normal["1時間前までの件数"].astype(float)
 
     fig.add_trace(go.Scatter(
