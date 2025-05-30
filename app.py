@@ -41,6 +41,7 @@ def analyze_and_plot(df, title, x_col):
     df["1時間前までの件数"] = df["1時間前までの件数"].apply(lambda x: x if x > 0 else None)
     df["超過フラグ"] = df["1時間前までの件数"].apply(lambda x: x > threshold if pd.notnull(x) else False)
 
+    show_lines = st.checkbox("📍 線を表示（チェックを外すと点のみ表示）", value=True)
     fig = go.Figure()
 
     over_indexes = df[df["超過フラグ"]].index.tolist()
